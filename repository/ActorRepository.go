@@ -12,6 +12,7 @@ type ActorRepository struct {
 type ActorInterfaceRepository interface {
 	CreateActor(actor entity.Actor) error
 	GetActorById(id uint) (entity.Actor, error)
+	GetActorByName(name string) (entity.Actor, error)
 	UpdateActor(actor entity.Actor, id uint) error
 	DeleteActor(id uint) error
 	GetRole(name string) (entity.Role, error)
@@ -24,6 +25,11 @@ func ActorNewRepo(db *gorm.DB) *ActorRepository {
 func (c *ActorRepository) CreateActor(actor entity.Actor) error {
 	err := c.db.Model(&entity.Actor{}).Create(&actor).Error
 	return err
+}
+func (c *ActorRepository) GetActorByName(name string) (entity.Actor, error) {
+	var actor entity.Actor
+	err := c.db.First(&actor, "username = ? ", name).Error
+	return actor, err
 }
 func (c *ActorRepository) GetActorById(id uint) (entity.Actor, error) {
 	var actor entity.Actor
