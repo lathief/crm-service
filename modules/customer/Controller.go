@@ -21,7 +21,7 @@ func (cc *customerController) CreateCustomer(customer CustomerDTO) (response.Res
 	if err != nil {
 		return response.HandleFailedResponse(err.Error(), 500), err
 	}
-	return response.HandleSuccessResponse(nil, "Create Customer Successfully", 500), err
+	return response.HandleSuccessResponse(nil, "Create Customer Successfully", 201), err
 }
 
 func (cc *customerController) GetCustomerById(custId int) (response.Response, error) {
