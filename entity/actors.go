@@ -1,6 +1,10 @@
 package entity
 
-import "database/sql/driver"
+import (
+	"database/sql/driver"
+	"github.com/lathief/crm-service/utils/security"
+	"gorm.io/gorm"
+)
 
 type boolType string
 
@@ -30,4 +34,13 @@ type Actor struct {
 
 func (Actor) TableName() string {
 	return "actor"
+}
+
+func (a *Actor) BeforeCreate(tx *gorm.DB) (err error) {
+	a.Password = security.HashPass(a.Password)
+	return
+}
+func (a *Actor) BeforeUpdate(tx *gorm.DB) (err error) {
+	a.Password = security.HashPass(a.Password)
+	return
 }
