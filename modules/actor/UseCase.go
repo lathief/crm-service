@@ -1,15 +1,18 @@
 package actor
 
 import (
+	"errors"
 	"github.com/lathief/crm-service/entity"
 	"github.com/lathief/crm-service/payload/request"
 	"github.com/lathief/crm-service/repository"
+	"github.com/lathief/crm-service/utils/security"
 )
 
 type useCaseActor struct {
 	ActorRepo repository.ActorInterfaceRepository
 }
 type UseCaseActor interface {
+	Login(actor request.AuthActor) error
 	CreateActor(actor request.AuthActor) error
 	GetActorById(id int) (ActorDTO, error)
 	UpdateActor(Actor ActorDTO, id int) error
@@ -17,6 +20,10 @@ type UseCaseActor interface {
 }
 
 func (uc *useCaseActor) CreateActor(actor request.AuthActor) error {
+	existUsername, _ := uc.ActorRepo.GetActorByName(actor.Username)
+	if existUsername.Username != "" {
+		return errors.New("Username already in use")
+	}
 	get, _ := uc.ActorRepo.GetRole(entity.ROLE_ADMIN)
 	ActorSave := entity.Actor{
 		Username:   actor.Username,
@@ -28,6 +35,17 @@ func (uc *useCaseActor) CreateActor(actor request.AuthActor) error {
 	err := uc.ActorRepo.CreateActor(ActorSave)
 	if err != nil {
 		return err
+	}
+	return nil
+}
+func (uc *useCaseActor) Login(actor request.AuthActor) error {
+	account, _ := uc.ActorRepo.GetActorByName(actor.Username)
+	if account.Username == "" {
+		return errors.New("Account not found")
+	}
+	match := security.ComparePass([]byte(account.Password), []byte(actor.Password))
+	if match == false {
+		return errors.New("Password does not match")
 	}
 	return nil
 }

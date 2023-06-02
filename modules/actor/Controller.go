@@ -11,18 +11,26 @@ type actorController struct {
 	ActorUseCase UseCaseActor
 }
 type ActorController interface {
-	CreateActor(request.AuthActor) (response.Response, error)
+	Register(request.AuthActor) (response.Response, error)
+	Login(request.AuthActor) (response.Response, error)
 	GetActorById(actorId int) (response.Response, error)
 	UpdateActor(Actor ActorDTO, actorId int) (response.Response, error)
 	DeleteActor(actorId int) (response.Response, error)
 }
 
-func (ac *actorController) CreateActor(actor request.AuthActor) (response.Response, error) {
+func (ac *actorController) Register(actor request.AuthActor) (response.Response, error) {
 	err := ac.ActorUseCase.CreateActor(actor)
 	if err != nil {
 		return response.HandleFailedResponse(err.Error(), 500), err
 	}
 	return response.HandleSuccessResponse(nil, "Create Actor Successfully", 201), err
+}
+func (ac *actorController) Login(actor request.AuthActor) (response.Response, error) {
+	err := ac.ActorUseCase.Login(actor)
+	if err != nil {
+		return response.HandleFailedResponse(err.Error(), 500), err
+	}
+	return response.HandleSuccessResponse(nil, "Login Successfully", 200), err
 }
 
 func (ac *actorController) GetActorById(actorId int) (response.Response, error) {

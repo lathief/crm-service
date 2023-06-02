@@ -25,7 +25,8 @@ func NewRouter(db *gorm.DB) ActorRoute {
 func (ar *ActorRoute) Handle(router *gin.Engine) {
 	basePath := "/actor"
 	customer := router.Group(basePath)
-	customer.POST("", ar.ActorHandler.CreateActor)
+	customer.POST("/register", ar.ActorHandler.Register)
+	customer.POST("/login", ar.ActorHandler.Login)
 	customer.GET("/:id", ar.ActorHandler.GetActorById)
 	customer.PUT("/:id", ar.ActorHandler.UpdateActor)
 	customer.DELETE("/:id", ar.ActorHandler.DeleteActor)
