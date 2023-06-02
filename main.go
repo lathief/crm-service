@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"github.com/gin-gonic/gin"
 	"github.com/lathief/crm-service/config"
+	"github.com/lathief/crm-service/modules/actor"
 	"github.com/lathief/crm-service/modules/customer"
 	"github.com/lathief/crm-service/utils/database"
 	"log"
@@ -31,6 +32,8 @@ func main() {
 	}
 	customerHandler := customer.NewRouter(db)
 	customerHandler.Handle(router)
+	actorHandler := actor.NewRouter(db)
+	actorHandler.Handle(router)
 	errRouter := router.Run(":8080")
 	if errRouter != nil {
 		fmt.Printf(errRouter.Error())
