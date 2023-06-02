@@ -7,3 +7,7 @@ type Customer struct {
 	Email     string
 	Avatar    string
 }
+
+func (Customer) TableName() string {
+	return "customer"
+}
