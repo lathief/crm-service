@@ -11,8 +11,8 @@ type CustomerRepository struct {
 }
 
 type CustomerInterfaceRepository interface {
-	CreateCustomer(customer entity.Customer) error
 	GetCustomerById(id uint) (entity.Customer, error)
+	CreateCustomer(customer entity.Customer) error
 	UpdateCustomer(customer entity.Customer, id uint) error
 	DeleteCustomer(id uint) error
 }
