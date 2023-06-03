@@ -12,7 +12,7 @@ type useCaseActor struct {
 	ActorRepo repository.ActorInterfaceRepository
 }
 type UseCaseActor interface {
-	Login(actor request.AuthActor) error
+	Login(actor request.AuthActor) (string, error)
 	CreateActor(actor request.AuthActor) error
 	GetActorById(id int) (ActorDTO, error)
 	UpdateActor(Actor ActorDTO, id int) error
@@ -38,16 +38,17 @@ func (uc *useCaseActor) CreateActor(actor request.AuthActor) error {
 	}
 	return nil
 }
-func (uc *useCaseActor) Login(actor request.AuthActor) error {
+func (uc *useCaseActor) Login(actor request.AuthActor) (string, error) {
 	account, _ := uc.ActorRepo.GetActorByName(actor.Username)
 	if account.Username == "" {
-		return errors.New("Account not found")
+		return "", errors.New("Account not found")
 	}
 	match := security.ComparePass([]byte(account.Password), []byte(actor.Password))
 	if match == false {
-		return errors.New("Password does not match")
+		return "", errors.New("Password does not match")
 	}
-	return nil
+	token := security.GenerateToken(account.ID, account.Username)
+	return token, nil
 }
 func (uc *useCaseActor) GetActorById(id int) (ActorDTO, error) {
 	get, err := uc.ActorRepo.GetActorById(uint(id))

@@ -26,11 +26,11 @@ func (ac *actorController) Register(actor request.AuthActor) (response.Response,
 	return response.HandleSuccessResponse(nil, "Create Actor Successfully", 201), err
 }
 func (ac *actorController) Login(actor request.AuthActor) (response.Response, error) {
-	err := ac.ActorUseCase.Login(actor)
+	token, err := ac.ActorUseCase.Login(actor)
 	if err != nil {
 		return response.HandleFailedResponse(err.Error(), 500), err
 	}
-	return response.HandleSuccessResponse(nil, "Login Successfully", 200), err
+	return response.HandleSuccessResponse(response.ResponseLogin{Token: token}, "Login Successfully", 200), err
 }
 
 func (ac *actorController) GetActorById(actorId int) (response.Response, error) {
