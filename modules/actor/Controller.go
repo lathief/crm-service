@@ -15,6 +15,10 @@ type ActorController interface {
 	GetActorById(actorId int) (response.Response, error)
 	UpdateActor(Actor ActorDTO, actorId int) (response.Response, error)
 	DeleteActor(actorId int) (response.Response, error)
+	SearchApproval(status string) (response.Response, error)
+	GetApprovalById(approvalId int) (response.Response, error)
+	UpdateFlagActor(Actor ActorDTO, actorId int) (response.Response, error)
+	ChangeStatusApproval(approvalId int, status string) (response.Response, error)
 }
 
 func (ac *actorController) CreateActor(actor request.AuthActor) (response.Response, error) {
@@ -24,7 +28,6 @@ func (ac *actorController) CreateActor(actor request.AuthActor) (response.Respon
 	}
 	return response.HandleSuccessResponse(nil, "Create Actor Successfully", 201), err
 }
-
 func (ac *actorController) GetActorById(actorId int) (response.Response, error) {
 	user, err := ac.ActorUseCase.GetActorById(actorId)
 	if err != nil {
@@ -39,11 +42,46 @@ func (ac *actorController) UpdateActor(Actor ActorDTO, actorId int) (response.Re
 	}
 	return response.HandleSuccessResponse(nil, "Success Update Actor ID: "+strconv.Itoa(actorId), 200), err
 }
-
 func (ac *actorController) DeleteActor(actorId int) (response.Response, error) {
 	err := ac.ActorUseCase.DeleteActor(actorId)
 	if err != nil {
 		return response.HandleFailedResponse(err.Error(), http.StatusInternalServerError), err
 	}
 	return response.HandleSuccessResponse(nil, "Success Delete Actor ID: "+strconv.Itoa(actorId), 200), err
+}
+func (ac *actorController) SearchApproval(status string) (response.Response, error) {
+	if status == "" {
+		res, err := ac.ActorUseCase.SearchApproval()
+		if err != nil {
+			return response.HandleFailedResponse(err.Error(), http.StatusNotFound), err
+		}
+		return response.HandleSuccessResponse(res, "Success Get All Approval Request", 200), err
+	} else {
+		res, err := ac.ActorUseCase.SearchApprovalByStatus(status)
+		if err != nil {
+			return response.HandleFailedResponse(err.Error(), http.StatusNotFound), err
+		}
+		return response.HandleSuccessResponse(res, "Success Get Approval Request with status "+status, 200), err
+	}
+}
+func (ac *actorController) GetApprovalById(approvalId int) (response.Response, error) {
+	approval, err := ac.ActorUseCase.GetApprovalById(approvalId)
+	if err != nil {
+		return response.HandleFailedResponse(err.Error(), http.StatusNotFound), err
+	}
+	return response.HandleSuccessResponse(approval, "Success Get Actor By ID: "+strconv.Itoa(approvalId), 200), err
+}
+func (ac *actorController) UpdateFlagActor(Actor ActorDTO, actorId int) (response.Response, error) {
+	err := ac.ActorUseCase.UpdateFlagActor(Actor, actorId)
+	if err != nil {
+		return response.HandleFailedResponse(err.Error(), http.StatusInternalServerError), err
+	}
+	return response.HandleSuccessResponse(nil, "Success Update Flag Actor ID: "+strconv.Itoa(actorId), 200), nil
+}
+func (ac *actorController) ChangeStatusApproval(approvalId int, status string) (response.Response, error) {
+	err := ac.ActorUseCase.ChangeStatusApproval(approvalId, status)
+	if err != nil {
+		return response.HandleFailedResponse(err.Error(), http.StatusInternalServerError), err
+	}
+	return response.HandleSuccessResponse(nil, "Success Change Status Approval ID: "+strconv.Itoa(approvalId), 200), nil
 }
