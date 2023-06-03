@@ -6,6 +6,10 @@ type Response struct {
 	Data    interface{} `json:"Data"`
 }
 
+type ResponseLogin struct {
+	Token string `json:"token"`
+}
+
 func HandleSuccessResponse(data interface{}, message string, status int) Response {
 	return Response{
 		Status:  status,
