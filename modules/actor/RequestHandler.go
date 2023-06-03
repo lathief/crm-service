@@ -13,7 +13,8 @@ type actorRequestHandler struct {
 }
 
 type ActorRequestHandler interface {
-	CreateActor(c *gin.Context)
+	Login(c *gin.Context)
+	Register(c *gin.Context)
 	GetActorById(c *gin.Context)
 	UpdateActor(c *gin.Context)
 	UpdateFlagActor(c *gin.Context)
@@ -23,14 +24,28 @@ type ActorRequestHandler interface {
 	ChangeStatusApproval(c *gin.Context)
 }
 
-func (ar *actorRequestHandler) CreateActor(c *gin.Context) {
+func (ar *actorRequestHandler) Register(c *gin.Context) {
 	actorReq := new(request.AuthActor)
 	err := c.ShouldBindJSON(&actorReq)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, response.HandleFailedResponse(err.Error(), 400))
 		return
 	}
-	res, err := ar.actorController.CreateActor(*actorReq)
+	res, err := ar.actorController.Register(*actorReq)
+	if err != nil {
+		c.JSON(res.Status, res)
+		return
+	}
+	c.JSON(http.StatusOK, res)
+}
+func (ar *actorRequestHandler) Login(c *gin.Context) {
+	actorReq := new(request.AuthActor)
+	err := c.ShouldBindJSON(&actorReq)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, response.HandleFailedResponse(err.Error(), 400))
+		return
+	}
+	res, err := ar.actorController.Login(*actorReq)
 	if err != nil {
 		c.JSON(res.Status, res)
 		return
