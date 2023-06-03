@@ -2,19 +2,19 @@ package entity
 
 import "database/sql/driver"
 
-type boolType string
+type BoolType string
 
 const (
-	True  boolType = "true"
-	False boolType = "false"
+	True  BoolType = "true"
+	False BoolType = "false"
 )
 
-func (ct *boolType) Scan(value interface{}) error {
-	*ct = boolType(value.([]byte))
+func (ct *BoolType) Scan(value interface{}) error {
+	*ct = BoolType(value.([]byte))
 	return nil
 }
 
-func (ct boolType) Value() (driver.Value, error) {
+func (ct BoolType) Value() (driver.Value, error) {
 	return string(ct), nil
 }
 
@@ -23,8 +23,8 @@ type Actor struct {
 	Username   string
 	Password   string
 	RoleId     uint
-	IsVerified boolType
-	IsActive   boolType
+	IsVerified BoolType
+	IsActive   BoolType
 	Role       *Role
 }
 

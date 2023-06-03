@@ -15,7 +15,8 @@ func NewRouter(db *gorm.DB) ActorRoute {
 		ActorHandler: &actorRequestHandler{
 			actorController: &actorController{
 				ActorUseCase: &useCaseActor{
-					ActorRepo: repository.ActorNewRepo(db),
+					ActorRepo:    repository.ActorNewRepo(db),
+					ApprovalRepo: repository.ApprovalNewRepo(db),
 				},
 			},
 		},
@@ -23,10 +24,19 @@ func NewRouter(db *gorm.DB) ActorRoute {
 }
 
 func (ar *ActorRoute) Handle(router *gin.Engine) {
-	basePath := "/actor"
-	customer := router.Group(basePath)
-	customer.POST("", ar.ActorHandler.CreateActor)
-	customer.GET("/:id", ar.ActorHandler.GetActorById)
-	customer.PUT("/:id", ar.ActorHandler.UpdateActor)
-	customer.DELETE("/:id", ar.ActorHandler.DeleteActor)
+	actorPath := "/actor"
+	actor := router.Group(actorPath)
+	actor.POST("", ar.ActorHandler.CreateActor)
+	actor.GET("/:id", ar.ActorHandler.GetActorById)
+	actor.PUT("/:id", ar.ActorHandler.UpdateActor)
+	actor.PUT("/flag/:id", ar.ActorHandler.UpdateFlagActor)
+	actor.DELETE("/:id", ar.ActorHandler.DeleteActor)
+
+	approvePath := "/approval"
+	approve := router.Group(approvePath)
+	approve.GET("", ar.ActorHandler.SearchApproval)
+	approve.GET("/:id", ar.ActorHandler.GetApprovalById)
+	approve.PUT("/:id", ar.ActorHandler.ChangeStatusApproval)
+	//approve.PUT("/:id", ar.ActorHandler.UpdateActor)
+	//approve.DELETE("/:id", ar.ActorHandler.DeleteActor)
 }
