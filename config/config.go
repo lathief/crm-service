@@ -8,6 +8,7 @@ import (
 type Configuration struct {
 	Server   SetupServer
 	Database SetupDatabase
+	AuthKey  SetupAccessKey
 }
 
 type SetupServer struct {
@@ -20,6 +21,10 @@ type SetupDatabase struct {
 	DBName string
 	DBHost string
 	DBPort string
+}
+
+type SetupAccessKey struct {
+	SecretKey string
 }
 
 var (
@@ -41,4 +46,5 @@ func SetupConfiguration() {
 	Config.Database.DBName = envs["DB_NAME"]
 	Config.Database.DBUser = envs["DB_USER"]
 	Config.Database.DBPass = envs["DB_PASS"]
+	Config.AuthKey.SecretKey = envs["SECRET_KEY"]
 }
