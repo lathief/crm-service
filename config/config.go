@@ -3,12 +3,14 @@ package config
 import (
 	"github.com/joho/godotenv"
 	"log"
+	"strconv"
 )
 
 type Configuration struct {
-	Server   SetupServer
-	Database SetupDatabase
-	AuthKey  SetupAccessKey
+	Server       SetupServer
+	Database     SetupDatabase
+	AuthKey      SetupAccessKey
+	SuperAccount SetupSuperAdmin
 }
 
 type SetupServer struct {
@@ -23,8 +25,14 @@ type SetupDatabase struct {
 	DBPort string
 }
 
+type SetupSuperAdmin struct {
+	SuperName     string
+	SuperPassword string
+}
+
 type SetupAccessKey struct {
 	SecretKey string
+	ExpiresAt int
 }
 
 var (
@@ -47,4 +55,7 @@ func SetupConfiguration() {
 	Config.Database.DBUser = envs["DB_USER"]
 	Config.Database.DBPass = envs["DB_PASS"]
 	Config.AuthKey.SecretKey = envs["SECRET_KEY"]
+	Config.AuthKey.ExpiresAt, _ = strconv.Atoi(envs["EXPIRED_AT"])
+	Config.SuperAccount.SuperName = envs["SUPER_NAME"]
+	Config.SuperAccount.SuperPassword = envs["SUPER_PASSWORD"]
 }
