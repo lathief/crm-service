@@ -1,7 +1,6 @@
 package repository
 
 import (
-	"fmt"
 	"github.com/lathief/crm-service/entity"
 	"github.com/lathief/crm-service/utils/helper"
 	"gorm.io/gorm"
@@ -55,7 +54,6 @@ func (c *ActorRepository) SearchActorByName(pagination helper.Pagination, name s
 }
 func (c *ActorRepository) CreateActor(actor *entity.Actor) error {
 	err := c.db.Model(&entity.Actor{}).Create(&actor).Error
-	fmt.Println(actor.ID)
 	return err
 }
 func (c *ActorRepository) UpdateActor(actor entity.Actor, id uint) error {

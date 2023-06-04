@@ -1,7 +1,6 @@
 package repository
 
 import (
-	"fmt"
 	"github.com/lathief/crm-service/entity"
 	"github.com/lathief/crm-service/utils/helper"
 	"gorm.io/gorm"
@@ -70,7 +69,6 @@ func (c *CustomerRepository) SearchCustomerByNameOrEmail(pagination helper.Pagin
 	return &pagination, err
 }
 func (c *CustomerRepository) UpdateCustomer(customer entity.Customer, id uint) error {
-	fmt.Println(customer)
 	err := c.db.Model(&entity.Customer{}).Where("id = ?", id).Updates(entity.Customer{
 		Firstname: customer.Firstname, Lastname: customer.Lastname, Email: customer.Email, Avatar: customer.Avatar}).Error
 	return err

@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"github.com/gin-gonic/gin"
 	"github.com/lathief/crm-service/config"
 	"github.com/lathief/crm-service/modules/actor"
@@ -36,7 +35,6 @@ func main() {
 	actorHandler.Handle(router)
 	errRouter := router.Run(":8080")
 	if errRouter != nil {
-		fmt.Printf(errRouter.Error())
-		return
+		log.Fatal(errRouter)
 	}
 }

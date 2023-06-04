@@ -1,7 +1,6 @@
 package customer
 
 import (
-	"fmt"
 	"github.com/lathief/crm-service/entity"
 	"github.com/lathief/crm-service/repository"
 	"github.com/lathief/crm-service/utils/helper"
@@ -67,19 +66,16 @@ func (uc *useCaseCustomer) SearchCustomer(filter map[string]string) (*helper.Pag
 		return &helper.Pagination{}, err
 	}
 	if filter["name"] != "" && filter["email"] == "" {
-		fmt.Println("name")
 		customers, err = uc.CustomerRepo.SearchCustomerByName(pagination, filter["name"], totalRows)
 		if err != nil {
 			return &helper.Pagination{}, err
 		}
 	} else if filter["email"] != "" && filter["name"] == "" {
-		fmt.Println("email")
 		customers, err = uc.CustomerRepo.SearchCustomerByEmail(pagination, filter["email"], totalRows)
 		if err != nil {
 			return &helper.Pagination{}, err
 		}
 	} else if filter["name"] != "" && filter["email"] != "" {
-		fmt.Println("dua")
 		customers, err = uc.CustomerRepo.SearchCustomerByNameOrEmail(pagination, filter["name"], filter["email"], totalRows)
 		if err != nil {
 			return &helper.Pagination{}, err
@@ -95,7 +91,6 @@ func (uc *useCaseCustomer) SearchCustomer(filter map[string]string) (*helper.Pag
 		//customers = append(customers, customersName...)
 		//customers = append(customers, customersEmail...)
 	} else {
-		fmt.Println("all")
 		customers, err = uc.CustomerRepo.GetAllCustomer(pagination, totalRows)
 		if err != nil {
 			return &helper.Pagination{}, err

@@ -2,7 +2,6 @@ package actor
 
 import (
 	"errors"
-	"fmt"
 	"github.com/lathief/crm-service/config"
 	"github.com/lathief/crm-service/entity"
 	"github.com/lathief/crm-service/payload/request"
@@ -168,7 +167,6 @@ func (au *useCaseActor) UpdateFlagActor(actor ActorDTO, id int) error {
 		IsActive:   entity.BoolType(actor.IsActive),
 		IsVerified: entity.BoolType(actor.IsVerified),
 	}
-	fmt.Println(getActor.Username)
 	err = au.ActorRepo.UpdateActor(ActorUpdate, uint(id))
 	if err != nil {
 		return err
@@ -183,7 +181,6 @@ func (au *useCaseActor) SearchApproval() ([]ApprovalDTO, error) {
 	var appovalsDTO []ApprovalDTO
 
 	for _, item := range gets {
-		fmt.Println(item.Status)
 		approvalDTO := ApprovalDTO{
 			Admin: ActorDTO{
 				Username:   item.Admin.Username,
