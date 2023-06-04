@@ -2,6 +2,7 @@ package actor
 
 import (
 	"github.com/gin-gonic/gin"
+	"github.com/lathief/crm-service/middleware"
 	"github.com/lathief/crm-service/repository"
 	"gorm.io/gorm"
 )
@@ -24,19 +25,24 @@ func NewRouter(db *gorm.DB) ActorRoute {
 }
 
 func (ar *ActorRoute) Handle(router *gin.Engine) {
-	actorPath := "/actor"
-	actor := router.Group(actorPath)
-	actor.POST("", ar.ActorHandler.CreateActor)
-	actor.GET("/:id", ar.ActorHandler.GetActorById)
-	actor.PUT("/:id", ar.ActorHandler.UpdateActor)
-	actor.PUT("/flag/:id", ar.ActorHandler.UpdateFlagActor)
-	actor.DELETE("/:id", ar.ActorHandler.DeleteActor)
+	router.POST("/login", ar.ActorHandler.Login)
+	router.POST("/register", ar.ActorHandler.Register)
 
+	adminPath := "/admin"
+	adminRG := router.Group(adminPath)
+	{
+		adminRG.Use(middleware.Authentication())
+		adminRG.GET("/:id", ar.ActorHandler.GetActorById)
+		adminRG.GET("/search", ar.ActorHandler.Search)
+		adminRG.PUT("/:id", middleware.AdminAuthorization(), ar.ActorHandler.UpdateActor)
+		adminRG.DELETE("/:id", middleware.SuperAdminAuthorization(), ar.ActorHandler.DeleteActor)
+	}
 	approvePath := "/approval"
-	approve := router.Group(approvePath)
-	approve.GET("", ar.ActorHandler.SearchApproval)
-	approve.GET("/:id", ar.ActorHandler.GetApprovalById)
-	approve.PUT("/:id", ar.ActorHandler.ChangeStatusApproval)
-	//approve.PUT("/:id", ar.ActorHandler.UpdateActor)
-	//approve.DELETE("/:id", ar.ActorHandler.DeleteActor)
+	approveRG := router.Group(approvePath)
+	{
+		approveRG.Use(middleware.Authentication())
+		approveRG.GET("/search", middleware.SuperAdminAuthorization(), ar.ActorHandler.SearchApproval)
+		approveRG.GET("/:id", middleware.SuperAdminAuthorization(), ar.ActorHandler.GetApprovalById)
+		approveRG.PUT("/:id", middleware.SuperAdminAuthorization(), ar.ActorHandler.ChangeStatusApproval)
+	}
 }

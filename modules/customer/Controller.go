@@ -11,6 +11,7 @@ type customerController struct {
 }
 type CustomerController interface {
 	CreateCustomer(customer CustomerDTO) (response.Response, error)
+	SearchCustomer(filter map[string]string) (response.Response, error)
 	GetCustomerById(custId int) (response.Response, error)
 	UpdateCustomer(customer CustomerDTO, custId int) (response.Response, error)
 	DeleteCustomer(custId int) (response.Response, error)
@@ -23,7 +24,13 @@ func (cc *customerController) CreateCustomer(customer CustomerDTO) (response.Res
 	}
 	return response.HandleSuccessResponse(nil, "Create Customer Successfully", 201), err
 }
-
+func (cc *customerController) SearchCustomer(filter map[string]string) (response.Response, error) {
+	customers, err := cc.CustomerUseCase.SearchCustomer(filter)
+	if err != nil {
+		return response.HandleFailedResponse(err.Error(), http.StatusNotFound), err
+	}
+	return response.HandleSuccessResponse(customers, "Success Get Customers", 200), err
+}
 func (cc *customerController) GetCustomerById(custId int) (response.Response, error) {
 	user, err := cc.CustomerUseCase.GetCustomerById(custId)
 	if err != nil {

@@ -13,6 +13,7 @@ type customerRequestHandler struct {
 type CustomerRequestHandler interface {
 	CreateCustomer(c *gin.Context)
 	GetCustomerById(c *gin.Context)
+	SearchCustomers(c *gin.Context)
 	UpdateCustomer(c *gin.Context)
 	DeleteCustomer(c *gin.Context)
 }
@@ -38,6 +39,24 @@ func (cr *customerRequestHandler) GetCustomerById(c *gin.Context) {
 		return
 	}
 	res, err := cr.CustomerController.GetCustomerById(id)
+	if err != nil {
+		c.JSON(res.Status, res)
+		return
+	}
+	c.JSON(http.StatusOK, res)
+}
+func (cr *customerRequestHandler) SearchCustomers(c *gin.Context) {
+	name := c.Query("name")
+	email := c.Query("email")
+	pageStr := c.DefaultQuery("page", "1")
+	limit := c.DefaultQuery("limit", "10")
+	filter := map[string]string{
+		"name":  name,
+		"email": email,
+		"page":  pageStr,
+		"limit": limit,
+	}
+	res, err := cr.CustomerController.SearchCustomer(filter)
 	if err != nil {
 		c.JSON(res.Status, res)
 		return

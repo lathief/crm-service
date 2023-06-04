@@ -11,8 +11,10 @@ type actorController struct {
 	ActorUseCase UseCaseActor
 }
 type ActorController interface {
-	CreateActor(request.AuthActor) (response.Response, error)
+	Register(request.AuthActor) (response.Response, error)
+	Login(request.AuthActor) (response.Response, error)
 	GetActorById(actorId int) (response.Response, error)
+	SearchActorByName(filter map[string]string) (response.Response, error)
 	UpdateActor(Actor ActorDTO, actorId int) (response.Response, error)
 	DeleteActor(actorId int) (response.Response, error)
 	SearchApproval(status string) (response.Response, error)
@@ -21,12 +23,26 @@ type ActorController interface {
 	ChangeStatusApproval(approvalId int, status string) (response.Response, error)
 }
 
-func (ac *actorController) CreateActor(actor request.AuthActor) (response.Response, error) {
-	err := ac.ActorUseCase.CreateActor(actor)
+func (ac *actorController) Register(actor request.AuthActor) (response.Response, error) {
+	err := ac.ActorUseCase.Register(actor)
 	if err != nil {
 		return response.HandleFailedResponse(err.Error(), 500), err
 	}
 	return response.HandleSuccessResponse(nil, "Create Actor Successfully", 201), err
+}
+func (ac *actorController) Login(actor request.AuthActor) (response.Response, error) {
+	token, err := ac.ActorUseCase.Login(actor)
+	if err != nil {
+		return response.HandleFailedResponse(err.Error(), 500), err
+	}
+	return response.HandleSuccessResponse(response.ResponseLogin{Token: token}, "Login Successfully", 200), err
+}
+func (ac *actorController) SearchActorByName(filter map[string]string) (response.Response, error) {
+	actors, err := ac.ActorUseCase.SearchActorByName(filter)
+	if err != nil {
+		return response.HandleFailedResponse(err.Error(), http.StatusNotFound), err
+	}
+	return response.HandleSuccessResponse(actors, "Success Get Actors", 200), err
 }
 func (ac *actorController) GetActorById(actorId int) (response.Response, error) {
 	user, err := ac.ActorUseCase.GetActorById(actorId)

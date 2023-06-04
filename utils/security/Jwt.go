@@ -3,7 +3,7 @@ package security
 import (
 	"errors"
 	"github.com/gin-gonic/gin"
-	"github.com/golang-jwt/jwt"
+	"github.com/golang-jwt/jwt/v5"
 	"github.com/lathief/crm-service/config"
 	"strings"
 )
@@ -12,6 +12,7 @@ func GenerateToken(id uint, username string) string {
 	claims := jwt.MapClaims{
 		"id":       id,
 		"username": username,
+		"exp":      config.Config.AuthKey.ExpiresAt,
 	}
 
 	parseToken := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)

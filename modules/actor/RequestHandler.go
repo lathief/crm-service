@@ -15,6 +15,7 @@ type actorRequestHandler struct {
 type ActorRequestHandler interface {
 	Login(c *gin.Context)
 	Register(c *gin.Context)
+	Search(c *gin.Context)
 	GetActorById(c *gin.Context)
 	UpdateActor(c *gin.Context)
 	UpdateFlagActor(c *gin.Context)
@@ -46,6 +47,22 @@ func (ar *actorRequestHandler) Login(c *gin.Context) {
 		return
 	}
 	res, err := ar.actorController.Login(*actorReq)
+	if err != nil {
+		c.JSON(res.Status, res)
+		return
+	}
+	c.JSON(http.StatusOK, res)
+}
+func (ar *actorRequestHandler) Search(c *gin.Context) {
+	name := c.Query("username")
+	pageStr := c.DefaultQuery("page", "1")
+	limit := c.DefaultQuery("limit", "10")
+	filter := map[string]string{
+		"name":  name,
+		"page":  pageStr,
+		"limit": limit,
+	}
+	res, err := ar.actorController.SearchActorByName(filter)
 	if err != nil {
 		c.JSON(res.Status, res)
 		return
