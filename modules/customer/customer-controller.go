@@ -2,7 +2,7 @@ package customer
 
 import (
 	"github.com/lathief/crm-service/payload/response"
-	"net/http"
+	"github.com/lathief/crm-service/utils/helper"
 	"strconv"
 )
 
@@ -20,36 +20,35 @@ type CustomerController interface {
 func (cc *customerController) CreateCustomer(customer CustomerDTO) (response.Response, error) {
 	err := cc.CustomerUseCase.CreateCustomer(customer)
 	if err != nil {
-		return response.HandleFailedResponse(err.Error(), 500), err
+		return response.HandleFailedResponse(err.Error(), helper.GetStatusCode(err)), err
 	}
 	return response.HandleSuccessResponse(nil, "Create Customer Successfully", 201), err
 }
 func (cc *customerController) SearchCustomer(filter map[string]string) (response.Response, error) {
 	customers, err := cc.CustomerUseCase.SearchCustomer(filter)
 	if err != nil {
-		return response.HandleFailedResponse(err.Error(), http.StatusNotFound), err
+		return response.HandleFailedResponse(err.Error(), helper.GetStatusCode(err)), err
 	}
-	return response.HandleSuccessResponse(customers, "Success Get Customers", 200), err
+	return response.HandleSuccessResponse(customers, "Success Search Customer by :"+filter["name"]+" "+filter["email"], 200), err
 }
 func (cc *customerController) GetCustomerById(custId int) (response.Response, error) {
 	user, err := cc.CustomerUseCase.GetCustomerById(custId)
 	if err != nil {
-		return response.HandleFailedResponse(err.Error(), http.StatusNotFound), err
+		return response.HandleFailedResponse(err.Error(), helper.GetStatusCode(err)), err
 	}
 	return response.HandleSuccessResponse(user, "Success Get Customer By ID : "+strconv.Itoa(custId), 200), err
 }
 func (cc *customerController) UpdateCustomer(customer CustomerDTO, custId int) (response.Response, error) {
 	err := cc.CustomerUseCase.UpdateCustomer(customer, custId)
 	if err != nil {
-		return response.HandleFailedResponse(err.Error(), http.StatusInternalServerError), err
+		return response.HandleFailedResponse(err.Error(), helper.GetStatusCode(err)), err
 	}
 	return response.HandleSuccessResponse(nil, "Success Update Customer", 200), err
 }
-
 func (cc *customerController) DeleteCustomer(custId int) (response.Response, error) {
 	err := cc.CustomerUseCase.DeleteCustomer(custId)
 	if err != nil {
-		return response.HandleFailedResponse(err.Error(), http.StatusInternalServerError), err
+		return response.HandleFailedResponse(err.Error(), helper.GetStatusCode(err)), err
 	}
 	return response.HandleSuccessResponse(nil, "Success Delete Customer", 200), err
 }

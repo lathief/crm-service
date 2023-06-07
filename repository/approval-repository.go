@@ -23,7 +23,6 @@ func ApprovalNewRepo(db *gorm.DB) *ApprovalRepository {
 
 func (a *ApprovalRepository) SearchApproval() ([]entity.Approval, error) {
 	var approval []entity.Approval
-	//err := a.db.Model(&entity.Approval{}).Find(&approval).Error
 	err := a.db.Preload("Admin").Find(&approval).Error
 	return approval, err
 }

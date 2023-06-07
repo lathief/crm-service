@@ -1,8 +1,10 @@
 package main
 
 import (
+	"fmt"
 	"github.com/gin-gonic/gin"
 	"github.com/lathief/crm-service/config"
+	"github.com/lathief/crm-service/middleware"
 	"github.com/lathief/crm-service/modules/actor"
 	"github.com/lathief/crm-service/modules/customer"
 	"github.com/lathief/crm-service/utils/database"
@@ -17,7 +19,7 @@ func main() {
 	router := gin.New()
 	db, err := database.StartDB()
 	if err != nil {
-		return
+		log.Fatal(err)
 	}
 	//check database
 	checkdb, err := db.DB()
@@ -29,11 +31,12 @@ func main() {
 	if err != nil {
 		log.Fatal(errconn)
 	}
-	customerHandler := customer.NewRouter(db)
+	jsonAuth := middleware.NewSecurity()
+	customerHandler := customer.NewRouter(db, jsonAuth)
 	customerHandler.Handle(router)
-	actorHandler := actor.NewRouter(db)
+	actorHandler := actor.NewRouter(db, jsonAuth)
 	actorHandler.Handle(router)
-	errRouter := router.Run(":8080")
+	errRouter := router.Run(fmt.Sprintf(":%s", config.Config.Server.Port))
 	if errRouter != nil {
 		log.Fatal(errRouter)
 	}

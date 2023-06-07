@@ -35,10 +35,8 @@ func (p *Pagination) GetSort() string {
 	}
 	return p.Sort
 }
-func Paginate(value interface{}, pagination *Pagination, totalRows int64) func(db *gorm.DB) *gorm.DB {
-	pagination.TotalRows = totalRows
-	totalPages := int(math.Ceil(float64(totalRows) / float64(pagination.Limit)))
-	pagination.TotalPages = totalPages
+func Paginate(value interface{}, pagination *Pagination) func(db *gorm.DB) *gorm.DB {
+	pagination.TotalPages = int(math.Ceil(float64(pagination.TotalRows) / float64(pagination.Limit)))
 	return func(db *gorm.DB) *gorm.DB {
 		return db.Offset(pagination.GetOffset()).Limit(pagination.GetLimit()).Order(pagination.GetSort())
 	}

@@ -11,7 +11,7 @@ type CustomerRoute struct {
 	CustomerHandler CustomerRequestHandler
 }
 
-func NewRouter(db *gorm.DB) CustomerRoute {
+func NewRouter(db *gorm.DB, auth middleware.AuthorizationInterface) CustomerRoute {
 	return CustomerRoute{
 		CustomerHandler: &customerRequestHandler{
 			CustomerController: &customerController{
@@ -19,6 +19,7 @@ func NewRouter(db *gorm.DB) CustomerRoute {
 					CustomerRepo: repository.New(db),
 				},
 			},
+			Auth: auth,
 		},
 	}
 }
@@ -26,7 +27,6 @@ func NewRouter(db *gorm.DB) CustomerRoute {
 func (cr *CustomerRoute) Handle(router *gin.Engine) {
 	customerPath := "/customer"
 	customerRG := router.Group(customerPath)
-	customerRG.Use(middleware.Authentication())
 	customerRG.POST("", cr.CustomerHandler.CreateCustomer)
 	customerRG.GET("/:id", cr.CustomerHandler.GetCustomerById)
 	customerRG.GET("/search", cr.CustomerHandler.SearchCustomers)

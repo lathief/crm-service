@@ -11,7 +11,7 @@ type ActorRoute struct {
 	ActorHandler ActorRequestHandler
 }
 
-func NewRouter(db *gorm.DB) ActorRoute {
+func NewRouter(db *gorm.DB, auth middleware.AuthorizationInterface) ActorRoute {
 	return ActorRoute{
 		ActorHandler: &actorRequestHandler{
 			actorController: &actorController{
@@ -20,6 +20,7 @@ func NewRouter(db *gorm.DB) ActorRoute {
 					ApprovalRepo: repository.ApprovalNewRepo(db),
 				},
 			},
+			Auth: auth,
 		},
 	}
 }
@@ -31,18 +32,17 @@ func (ar *ActorRoute) Handle(router *gin.Engine) {
 	adminPath := "/admin"
 	adminRG := router.Group(adminPath)
 	{
-		adminRG.Use(middleware.Authentication())
-		adminRG.GET("/:id", ar.ActorHandler.GetActorById)
 		adminRG.GET("/search", ar.ActorHandler.Search)
-		adminRG.PUT("/:id", middleware.AdminAuthorization(), ar.ActorHandler.UpdateActor)
-		adminRG.DELETE("/:id", middleware.SuperAdminAuthorization(), ar.ActorHandler.DeleteActor)
+		adminRG.GET("/:id", ar.ActorHandler.GetActorById)
+		adminRG.PUT("/:id", ar.ActorHandler.UpdateActor)
+		adminRG.DELETE("/:id", ar.ActorHandler.DeleteActor)
+		adminRG.PUT("/:id/status", ar.ActorHandler.UpdateFlagActor)
 	}
 	approvePath := "/approval"
 	approveRG := router.Group(approvePath)
 	{
-		approveRG.Use(middleware.Authentication())
-		approveRG.GET("/search", middleware.SuperAdminAuthorization(), ar.ActorHandler.SearchApproval)
-		approveRG.GET("/:id", middleware.SuperAdminAuthorization(), ar.ActorHandler.GetApprovalById)
-		approveRG.PUT("/:id", middleware.SuperAdminAuthorization(), ar.ActorHandler.ChangeStatusApproval)
+		approveRG.GET("/search", ar.ActorHandler.SearchApproval)
+		approveRG.GET("/:id", ar.ActorHandler.GetApprovalById)
+		approveRG.PUT("/:id", ar.ActorHandler.ChangeStatusApproval)
 	}
 }

@@ -2,6 +2,7 @@ package customer
 
 import (
 	"github.com/gin-gonic/gin"
+	"github.com/lathief/crm-service/middleware"
 	"github.com/lathief/crm-service/payload/response"
 	"net/http"
 	"strconv"
@@ -9,6 +10,7 @@ import (
 
 type customerRequestHandler struct {
 	CustomerController CustomerController
+	Auth               middleware.AuthorizationInterface
 }
 type CustomerRequestHandler interface {
 	CreateCustomer(c *gin.Context)
@@ -19,8 +21,13 @@ type CustomerRequestHandler interface {
 }
 
 func (cr *customerRequestHandler) CreateCustomer(c *gin.Context) {
+	err := cr.Auth.Authentication(c)
+	if err != nil {
+		c.JSON(http.StatusUnauthorized, response.HandleFailedResponse(err.Error(), 401))
+		return
+	}
 	custReq := new(CustomerDTO)
-	err := c.ShouldBindJSON(&custReq)
+	err = c.ShouldBindJSON(&custReq)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, response.HandleFailedResponse(err.Error(), 400))
 		return
@@ -33,6 +40,11 @@ func (cr *customerRequestHandler) CreateCustomer(c *gin.Context) {
 	c.JSON(http.StatusOK, res)
 }
 func (cr *customerRequestHandler) GetCustomerById(c *gin.Context) {
+	err := cr.Auth.Authentication(c)
+	if err != nil {
+		c.JSON(http.StatusUnauthorized, response.HandleFailedResponse(err.Error(), 401))
+		return
+	}
 	id, err := strconv.Atoi(c.Param("id"))
 	if err != nil {
 		c.JSON(http.StatusBadRequest, response.HandleFailedResponse(err.Error(), 400))
@@ -46,15 +58,24 @@ func (cr *customerRequestHandler) GetCustomerById(c *gin.Context) {
 	c.JSON(http.StatusOK, res)
 }
 func (cr *customerRequestHandler) SearchCustomers(c *gin.Context) {
+	err := cr.Auth.Authentication(c)
+	if err != nil {
+		c.JSON(http.StatusUnauthorized, response.HandleFailedResponse(err.Error(), 401))
+		return
+	}
 	name := c.Query("name")
 	email := c.Query("email")
 	pageStr := c.DefaultQuery("page", "1")
 	limit := c.DefaultQuery("limit", "10")
+	sortBy := c.DefaultQuery("sort_by", "id")
+	orderBy := c.DefaultQuery("order_by", "asc")
 	filter := map[string]string{
-		"name":  name,
-		"email": email,
-		"page":  pageStr,
-		"limit": limit,
+		"name":    name,
+		"email":   email,
+		"page":    pageStr,
+		"limit":   limit,
+		"sortby":  sortBy,
+		"orderby": orderBy,
 	}
 	res, err := cr.CustomerController.SearchCustomer(filter)
 	if err != nil {
@@ -64,6 +85,11 @@ func (cr *customerRequestHandler) SearchCustomers(c *gin.Context) {
 	c.JSON(http.StatusOK, res)
 }
 func (cr *customerRequestHandler) UpdateCustomer(c *gin.Context) {
+	err := cr.Auth.Authentication(c)
+	if err != nil {
+		c.JSON(http.StatusUnauthorized, response.HandleFailedResponse(err.Error(), 401))
+		return
+	}
 	id, err := strconv.Atoi(c.Param("id"))
 	if err != nil {
 		c.JSON(http.StatusBadRequest, response.HandleFailedResponse(err.Error(), 400))
@@ -83,6 +109,11 @@ func (cr *customerRequestHandler) UpdateCustomer(c *gin.Context) {
 	c.JSON(http.StatusOK, res)
 }
 func (cr *customerRequestHandler) DeleteCustomer(c *gin.Context) {
+	err := cr.Auth.Authentication(c)
+	if err != nil {
+		c.JSON(http.StatusUnauthorized, response.HandleFailedResponse(err.Error(), 401))
+		return
+	}
 	id, err := strconv.Atoi(c.Param("id"))
 	if err != nil {
 		c.JSON(http.StatusBadRequest, response.HandleFailedResponse(err.Error(), 400))

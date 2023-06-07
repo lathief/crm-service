@@ -1,6 +1,8 @@
 package customer
 
 import (
+	"fmt"
+	"github.com/lathief/crm-service/constant"
 	"github.com/lathief/crm-service/entity"
 	"github.com/lathief/crm-service/repository"
 	"github.com/lathief/crm-service/utils/helper"
@@ -34,7 +36,7 @@ func (uc *useCaseCustomer) CreateCustomer(customer CustomerDTO) error {
 func (uc *useCaseCustomer) GetCustomerById(id int) (CustomerDTO, error) {
 	get, err := uc.CustomerRepo.GetCustomerById(uint(id))
 	if err != nil {
-		return CustomerDTO{}, err
+		return CustomerDTO{}, constant.ErrCustomerNotFound
 	}
 	getCust := CustomerDTO{
 		Firstname: get.Firstname,
@@ -56,61 +58,73 @@ func (uc *useCaseCustomer) SearchCustomer(filter map[string]string) (*helper.Pag
 	if err != nil {
 		return &helper.Pagination{}, err
 	}
-	pagination := helper.Pagination{
-		Limit: limit,
-		Page:  page,
-		Sort:  "Id desc",
-	}
 	err = uc.CustomerRepo.CountRowCustomer(&totalRows)
 	if err != nil {
 		return &helper.Pagination{}, err
 	}
+	pagination := helper.Pagination{
+		Limit:     limit,
+		Page:      page,
+		Sort:      fmt.Sprintf("%s %s", filter["sortby"], filter["orderby"]),
+		TotalRows: totalRows,
+	}
+	if totalRows == 0 {
+		initData, err := helper.DataCustomerInit()
+		if err != nil {
+			return nil, err
+		}
+		for _, data := range initData {
+			var tmp = entity.Customer{
+				Firstname: data.FirstName,
+				Lastname:  data.LastName,
+				Avatar:    data.Avatar,
+				Email:     data.Email,
+			}
+			err := uc.CustomerRepo.CreateCustomer(tmp)
+			if err != nil {
+				return nil, err
+			}
+		}
+	}
 	if filter["name"] != "" && filter["email"] == "" {
-		customers, err = uc.CustomerRepo.SearchCustomerByName(pagination, filter["name"], totalRows)
+		customers, err = uc.CustomerRepo.SearchCustomerByName(pagination, filter["name"])
 		if err != nil {
 			return &helper.Pagination{}, err
 		}
 	} else if filter["email"] != "" && filter["name"] == "" {
-		customers, err = uc.CustomerRepo.SearchCustomerByEmail(pagination, filter["email"], totalRows)
+		customers, err = uc.CustomerRepo.SearchCustomerByEmail(pagination, filter["email"])
 		if err != nil {
 			return &helper.Pagination{}, err
 		}
 	} else if filter["name"] != "" && filter["email"] != "" {
-		customers, err = uc.CustomerRepo.SearchCustomerByNameOrEmail(pagination, filter["name"], filter["email"], totalRows)
+		customers, err = uc.CustomerRepo.SearchCustomerByNameOrEmail(pagination, filter["name"], filter["email"])
 		if err != nil {
 			return &helper.Pagination{}, err
 		}
-		//customersName, err := uc.CustomerRepo.SearchCustomerByEmail(filter["email"])
-		//if err != nil {
-		//	return nil, err
-		//}
-		//customersEmail, err := uc.CustomerRepo.SearchCustomerByName(filter["name"])
-		//if err != nil {
-		//	return nil, err
-		//}
-		//customers = append(customers, customersName...)
-		//customers = append(customers, customersEmail...)
 	} else {
-		customers, err = uc.CustomerRepo.GetAllCustomer(pagination, totalRows)
+		customers, err = uc.CustomerRepo.GetAllCustomer(pagination)
 		if err != nil {
 			return &helper.Pagination{}, err
 		}
 	}
-	//for _, item := range customers {
-	//	customerDTO := CustomerDTO{
-	//		Firstname: item.Firstname,
-	//		Lastname:  item.Lastname,
-	//		Email:     item.Email,
-	//		Avatar:    item.Avatar,
-	//	}
-	//	customersDTO = append(customersDTO, customerDTO)
-	//}
+	var customer []CustomerDTO
+	data := customers.Rows.([]*entity.Customer)
+	for _, item := range data {
+		var cust = CustomerDTO{
+			Firstname: item.Firstname,
+			Lastname:  item.Lastname,
+			Avatar:    item.Avatar,
+			Email:     item.Email,
+		}
+		customer = append(customer, cust)
+	}
+	customers.Rows = customer
 	return customers, nil
 }
 func (uc *useCaseCustomer) UpdateCustomer(customer CustomerDTO, id int) error {
 	_, err := uc.CustomerRepo.GetCustomerById(uint(id))
 	if err != nil {
-		return err
+		return constant.ErrCustomerNotFound
 	}
 	customerUpdate := entity.Customer{
 		Firstname: customer.Firstname,
@@ -127,7 +141,7 @@ func (uc *useCaseCustomer) UpdateCustomer(customer CustomerDTO, id int) error {
 func (uc *useCaseCustomer) DeleteCustomer(id int) error {
 	_, err := uc.CustomerRepo.GetCustomerById(uint(id))
 	if err != nil {
-		return err
+		return constant.ErrCustomerNotFound
 	}
 	err = uc.CustomerRepo.DeleteCustomer(uint(id))
 	if err != nil {
