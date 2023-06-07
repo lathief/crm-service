@@ -11,15 +11,17 @@ type CustomerRoute struct {
 	CustomerHandler CustomerRequestHandler
 }
 
-func NewRouter(db *gorm.DB, auth middleware.AuthorizationInterface) CustomerRoute {
+func NewRouter(db *gorm.DB, auth middleware.AuthorizationInterface, validation middleware.ValidationInterface) CustomerRoute {
 	return CustomerRoute{
 		CustomerHandler: &customerRequestHandler{
 			CustomerController: &customerController{
 				CustomerUseCase: &useCaseCustomer{
 					CustomerRepo: repository.New(db),
+					ActorRepo:    repository.ActorNewRepo(db),
 				},
 			},
-			Auth: auth,
+			Validation: validation,
+			Auth:       auth,
 		},
 	}
 }

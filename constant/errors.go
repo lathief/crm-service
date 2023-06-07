@@ -17,4 +17,5 @@ var (
 	ErrTokenInvalid          = fmt.Errorf("Token invalid")
 	ErrAdminNeedLogin        = fmt.Errorf("login to proceed")
 	ErrNotAllowedAccess      = fmt.Errorf("You are not allowed to access this data")
+	ErrAdminNotActive        = fmt.Errorf("Admin not active and verified")
 )

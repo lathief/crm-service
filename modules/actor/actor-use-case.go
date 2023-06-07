@@ -1,11 +1,13 @@
 package actor
 
 import (
+	"context"
+	"errors"
 	"fmt"
 	"github.com/lathief/crm-service/config"
 	"github.com/lathief/crm-service/constant"
 	"github.com/lathief/crm-service/entity"
-	"github.com/lathief/crm-service/payload/request"
+	"github.com/lathief/crm-service/payload"
 	"github.com/lathief/crm-service/repository"
 	"github.com/lathief/crm-service/utils/helper"
 	"github.com/lathief/crm-service/utils/security"
@@ -17,20 +19,20 @@ type useCaseActor struct {
 	ApprovalRepo repository.ApprovalInterfaceRepository
 }
 type UseCaseActor interface {
-	Register(actor request.AuthActor) error
-	Login(actor request.AuthActor) (string, error)
+	Register(actor payload.AuthActor) error
+	Login(actor payload.AuthActor) (string, error)
 	GetActorById(id int) (ActorDTO, error)
-	SearchActorByName(filter map[string]string) (*helper.Pagination, error)
-	UpdateActor(updateActor request.UpdateActor, id int) error
+	SearchActorByName(c context.Context, filter map[string]string) (*helper.Pagination, error)
+	UpdateActor(updateActor payload.UpdateActor, id int) error
 	DeleteActor(id int) error
-	UpdateFlagActor(actor ActorDTO, id int) error
+	UpdateFlagActor(updateFlag payload.UpdateFlagActor, id int) error
 	SearchApproval() ([]ApprovalDTO, error)
 	SearchApprovalByStatus(status string) ([]ApprovalDTO, error)
 	GetApprovalById(id int) (ApprovalDTO, error)
-	ChangeStatusApproval(id int, status request.ApprovalStatus) error
+	ChangeStatusApproval(id int, status payload.ApprovalStatus) error
 }
 
-func (au *useCaseActor) Register(actor request.AuthActor) error {
+func (au *useCaseActor) Register(actor payload.AuthActor) error {
 	existUsername, _ := au.ActorRepo.GetActorByName(actor.Username)
 	if existUsername.Username != "" {
 		return constant.ErrAdminUsernameExists
@@ -67,7 +69,7 @@ func (au *useCaseActor) Register(actor request.AuthActor) error {
 	}
 	return nil
 }
-func (au *useCaseActor) Login(actor request.AuthActor) (string, error) {
+func (au *useCaseActor) Login(actor payload.AuthActor) (string, error) {
 	account, _ := au.ActorRepo.GetActorByName(actor.Username)
 	if account.Username == "" {
 		return "", constant.ErrAdminNotFound
@@ -88,6 +90,7 @@ func (au *useCaseActor) GetActorById(id int) (ActorDTO, error) {
 		return ActorDTO{}, constant.ErrAdminNotFound
 	}
 	getActor := ActorDTO{
+		ID:         get.ID,
 		Username:   get.Username,
 		IsVerified: string(get.IsVerified),
 		IsActive:   string(get.IsActive),
@@ -95,10 +98,15 @@ func (au *useCaseActor) GetActorById(id int) (ActorDTO, error) {
 	}
 	return getActor, nil
 }
-func (au *useCaseActor) SearchActorByName(filter map[string]string) (*helper.Pagination, error) {
+func (au *useCaseActor) SearchActorByName(c context.Context, filter map[string]string) (*helper.Pagination, error) {
+	var err error
+	user, _ := au.ActorRepo.GetActorById(c.Value("id").(uint))
+	if user.IsActive != constant.True {
+		return nil, errors.New("user not active")
+	}
 	var result *helper.Pagination
 	var totalRows int64
-	var err error
+
 	page, err := strconv.Atoi(filter["page"])
 	if err != nil {
 		return &helper.Pagination{}, err
@@ -132,6 +140,7 @@ func (au *useCaseActor) SearchActorByName(filter map[string]string) (*helper.Pag
 	data := result.Rows.([]*entity.Actor)
 	for _, item := range data {
 		var admin = ActorDTO{
+			ID:         item.ID,
 			Role:       item.Role.Rolename,
 			Username:   item.Username,
 			IsActive:   string(item.IsActive),
@@ -142,7 +151,7 @@ func (au *useCaseActor) SearchActorByName(filter map[string]string) (*helper.Pag
 	result.Rows = admins
 	return result, nil
 }
-func (au *useCaseActor) UpdateActor(updateActor request.UpdateActor, id int) error {
+func (au *useCaseActor) UpdateActor(updateActor payload.UpdateActor, id int) error {
 	_, err := au.ActorRepo.GetActorById(uint(id))
 	if err != nil {
 		return constant.ErrAdminNotFound
@@ -168,7 +177,7 @@ func (au *useCaseActor) DeleteActor(id int) error {
 	}
 	return nil
 }
-func (au *useCaseActor) UpdateFlagActor(actor ActorDTO, id int) error {
+func (au *useCaseActor) UpdateFlagActor(updateFlag payload.UpdateFlagActor, id int) error {
 	getActor, err := au.ActorRepo.GetActorById(uint(id))
 	if err != nil {
 		return constant.ErrAdminNotFound
@@ -181,8 +190,8 @@ func (au *useCaseActor) UpdateFlagActor(actor ActorDTO, id int) error {
 		return constant.ErrAdminNotApprove
 	}
 	ActorUpdate := entity.Actor{
-		IsActive:   constant.BoolType(actor.IsActive),
-		IsVerified: constant.BoolType(actor.IsVerified),
+		IsActive:   constant.BoolType(updateFlag.IsActive),
+		IsVerified: constant.BoolType(updateFlag.IsVerified),
 	}
 	err = au.ActorRepo.UpdateActor(ActorUpdate, uint(id))
 	if err != nil {
@@ -202,6 +211,7 @@ func (au *useCaseActor) SearchApproval() ([]ApprovalDTO, error) {
 			ID: item.ID,
 			Admin: ActorDTO{
 				Username:   item.Admin.Username,
+				Role:       entity.ROLE_ADMIN,
 				IsVerified: string(item.Admin.IsVerified),
 				IsActive:   string(item.Admin.IsVerified),
 			},
@@ -222,6 +232,7 @@ func (au *useCaseActor) SearchApprovalByStatus(status string) ([]ApprovalDTO, er
 			ID: item.ID,
 			Admin: ActorDTO{
 				Username:   item.Admin.Username,
+				Role:       entity.ROLE_ADMIN,
 				IsVerified: string(item.Admin.IsVerified),
 				IsActive:   string(item.Admin.IsVerified),
 			},
@@ -247,16 +258,26 @@ func (au *useCaseActor) GetApprovalById(id int) (ApprovalDTO, error) {
 	}
 	return approvalDTO, nil
 }
-func (au *useCaseActor) ChangeStatusApproval(id int, status request.ApprovalStatus) error {
-	fmt.Println(status)
-	_, err := au.ApprovalRepo.GetApprovalById(uint(id))
+func (au *useCaseActor) ChangeStatusApproval(id int, status payload.ApprovalStatus) error {
+	var ActorUpdate entity.Actor
+	get, err := au.ApprovalRepo.GetApprovalById(uint(id))
 	if err != nil {
 		return constant.ErrApprovalNotFound
 	}
 	approvalUpdate := entity.Approval{
 		Status: status.Status,
 	}
+	if status.Status == "approve" {
+		ActorUpdate = entity.Actor{
+			IsActive:   constant.BoolType("True"),
+			IsVerified: constant.BoolType("True"),
+		}
+	}
 	err = au.ApprovalRepo.UpdateApproval(approvalUpdate, uint(id))
+	if err != nil {
+		return err
+	}
+	err = au.ActorRepo.UpdateActor(ActorUpdate, get.Admin_id)
 	if err != nil {
 		return err
 	}

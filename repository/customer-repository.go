@@ -65,8 +65,7 @@ func (c *CustomerRepository) SearchCustomerByNameOrEmail(pagination helper.Pagin
 	return &pagination, err
 }
 func (c *CustomerRepository) UpdateCustomer(customer entity.Customer, id uint) error {
-	err := c.db.Model(&entity.Customer{}).Where("id = ?", id).Updates(entity.Customer{
-		Firstname: customer.Firstname, Lastname: customer.Lastname, Email: customer.Email, Avatar: customer.Avatar}).Error
+	err := c.db.Model(&entity.Customer{}).Where("id = ?", id).Updates(customer).Error
 	return err
 }
 func (c *CustomerRepository) DeleteCustomer(id uint) error {

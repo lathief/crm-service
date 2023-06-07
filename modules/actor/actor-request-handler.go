@@ -1,13 +1,13 @@
 package actor
 
 import (
+	"context"
 	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/lathief/crm-service/config"
 	"github.com/lathief/crm-service/constant"
 	"github.com/lathief/crm-service/middleware"
-	"github.com/lathief/crm-service/payload/request"
-	"github.com/lathief/crm-service/payload/response"
+	"github.com/lathief/crm-service/payload"
 	"net/http"
 	"strconv"
 )
@@ -15,6 +15,7 @@ import (
 type actorRequestHandler struct {
 	actorController ActorController
 	Auth            middleware.AuthorizationInterface
+	Validation      middleware.ValidationInterface
 }
 
 type ActorRequestHandler interface {
@@ -31,13 +32,17 @@ type ActorRequestHandler interface {
 }
 
 func (ar *actorRequestHandler) Register(c *gin.Context) {
-	actorReq := new(request.AuthActor)
-	err := c.ShouldBindJSON(&actorReq)
-	if err != nil {
-		c.JSON(http.StatusBadRequest, response.HandleFailedResponse(err.Error(), 400))
+	var actorReq payload.AuthActor
+	//err := c.ShouldBindJSON(&actorReq)
+	//if err != nil {
+	//	c.JSON(http.StatusBadRequest, payload.HandleFailedResponse(err.Error(), 400))
+	//	return
+	//}
+	if errs := ar.Validation.BindAndValidate(c, &actorReq); len(errs) > 0 {
+		c.JSON(http.StatusBadRequest, payload.HandleSuccessResponse(errs, "", 400))
 		return
 	}
-	res, err := ar.actorController.Register(*actorReq)
+	res, err := ar.actorController.Register(actorReq)
 	if err != nil {
 		c.JSON(res.Status, res)
 		return
@@ -45,13 +50,17 @@ func (ar *actorRequestHandler) Register(c *gin.Context) {
 	c.JSON(http.StatusOK, res)
 }
 func (ar *actorRequestHandler) Login(c *gin.Context) {
-	actorReq := new(request.AuthActor)
-	err := c.ShouldBindJSON(&actorReq)
-	if err != nil {
-		c.JSON(http.StatusBadRequest, response.HandleFailedResponse(err.Error(), 400))
+	var actorReq payload.AuthActor
+	//err := c.ShouldBindJSON(&actorReq)
+	//if err != nil {
+	//	c.JSON(http.StatusBadRequest, payload.HandleFailedResponse(err.Error(), 400))
+	//	return
+	//}
+	if errs := ar.Validation.BindAndValidate(c, &actorReq); len(errs) > 0 {
+		c.JSON(http.StatusBadRequest, payload.HandleSuccessResponse(errs, "", 400))
 		return
 	}
-	res, err := ar.actorController.Login(*actorReq)
+	res, err := ar.actorController.Login(actorReq)
 	if err != nil {
 		c.JSON(res.Status, res)
 		return
@@ -61,7 +70,7 @@ func (ar *actorRequestHandler) Login(c *gin.Context) {
 func (ar *actorRequestHandler) Search(c *gin.Context) {
 	err := ar.Auth.Authentication(c)
 	if err != nil {
-		c.JSON(http.StatusUnauthorized, response.HandleFailedResponse(err.Error(), 401))
+		c.JSON(http.StatusUnauthorized, payload.HandleFailedResponse(err.Error(), 401))
 		return
 	}
 	name := c.Query("username")
@@ -76,7 +85,10 @@ func (ar *actorRequestHandler) Search(c *gin.Context) {
 		"sortby":  sortBy,
 		"orderby": orderBy,
 	}
-	res, err := ar.actorController.SearchActorByName(filter)
+	ctx := context.Background()
+	adminData := c.MustGet("adminData").(jwt.MapClaims)
+	ctx = context.WithValue(ctx, "id", uint(adminData["id"].(float64)))
+	res, err := ar.actorController.SearchActorByName(ctx, filter)
 	if err != nil {
 		c.JSON(res.Status, res)
 		return
@@ -86,18 +98,18 @@ func (ar *actorRequestHandler) Search(c *gin.Context) {
 func (ar *actorRequestHandler) GetActorById(c *gin.Context) {
 	err := ar.Auth.Authentication(c)
 	if err != nil {
-		c.JSON(http.StatusUnauthorized, response.HandleFailedResponse(err.Error(), 401))
+		c.JSON(http.StatusUnauthorized, payload.HandleFailedResponse(err.Error(), 401))
 		return
 	}
 	id, err := strconv.Atoi(c.Param("id"))
 	if err != nil {
-		c.JSON(http.StatusBadRequest, response.HandleFailedResponse(err.Error(), 400))
+		c.JSON(http.StatusBadRequest, payload.HandleFailedResponse(err.Error(), 400))
 		return
 	}
 	adminData := c.MustGet("adminData").(jwt.MapClaims)
 	adminID := uint(adminData["id"].(float64))
 	if uint(id) != adminID && adminData["username"].(string) != config.Config.SuperAccount.SuperName {
-		c.JSON(http.StatusUnauthorized, response.HandleFailedResponse(constant.ErrNotAllowedAccess.Error(), 401))
+		c.JSON(http.StatusUnauthorized, payload.HandleFailedResponse(constant.ErrNotAllowedAccess.Error(), 401))
 		return
 	}
 	res, err := ar.actorController.GetActorById(id)
@@ -110,28 +122,32 @@ func (ar *actorRequestHandler) GetActorById(c *gin.Context) {
 func (ar *actorRequestHandler) UpdateActor(c *gin.Context) {
 	err := ar.Auth.Authentication(c)
 	if err != nil {
-		c.JSON(http.StatusUnauthorized, response.HandleFailedResponse(err.Error(), 401))
+		c.JSON(http.StatusUnauthorized, payload.HandleFailedResponse(err.Error(), 401))
 		return
 	}
 	id, err := strconv.Atoi(c.Param("id"))
 	if err != nil {
-		c.JSON(http.StatusBadRequest, response.HandleFailedResponse(err.Error(), 400))
+		c.JSON(http.StatusBadRequest, payload.HandleFailedResponse(err.Error(), 400))
 		return
 	}
 	adminData := c.MustGet("adminData").(jwt.MapClaims)
 	adminID := uint(adminData["id"].(float64))
 	if uint(id) != adminID {
-		c.JSON(http.StatusUnauthorized, response.HandleFailedResponse(constant.ErrNotAllowedAccess.Error(), 401))
+		c.JSON(http.StatusUnauthorized, payload.HandleFailedResponse(constant.ErrNotAllowedAccess.Error(), 401))
 		return
 	}
-	actorReq := new(request.UpdateActor)
-	err = c.ShouldBindJSON(&actorReq)
-	if err != nil {
-		c.JSON(http.StatusBadRequest, response.HandleFailedResponse(err.Error(), 400))
+	var actorReq payload.UpdateActor
+	//err = c.ShouldBindJSON(&actorReq)
+	//if err != nil {
+	//	c.JSON(http.StatusBadRequest, payload.HandleFailedResponse(err.Error(), 400))
+	//	return
+	//}
+	if errs := ar.Validation.BindAndValidate(c, &actorReq); len(errs) > 0 {
+		c.JSON(http.StatusBadRequest, payload.HandleSuccessResponse(errs, "", 400))
 		return
 	}
 
-	res, err := ar.actorController.UpdateActor(*actorReq, id)
+	res, err := ar.actorController.UpdateActor(actorReq, id)
 	if err != nil {
 		c.JSON(res.Status, res)
 		return
@@ -141,17 +157,17 @@ func (ar *actorRequestHandler) UpdateActor(c *gin.Context) {
 func (ar *actorRequestHandler) DeleteActor(c *gin.Context) {
 	err := ar.Auth.Authentication(c)
 	if err != nil {
-		c.JSON(http.StatusUnauthorized, response.HandleFailedResponse(err.Error(), 401))
+		c.JSON(http.StatusUnauthorized, payload.HandleFailedResponse(err.Error(), 401))
 		return
 	}
 	adminData := c.MustGet("adminData").(jwt.MapClaims)
 	if adminData["username"].(string) != config.Config.SuperAccount.SuperName {
-		c.JSON(http.StatusUnauthorized, response.HandleFailedResponse(constant.ErrNotAllowedAccess.Error(), 401))
+		c.JSON(http.StatusUnauthorized, payload.HandleFailedResponse(constant.ErrNotAllowedAccess.Error(), 401))
 		return
 	}
 	id, err := strconv.Atoi(c.Param("id"))
 	if err != nil {
-		c.JSON(http.StatusBadRequest, response.HandleFailedResponse(err.Error(), 400))
+		c.JSON(http.StatusBadRequest, payload.HandleFailedResponse(err.Error(), 400))
 		return
 	}
 
@@ -165,27 +181,31 @@ func (ar *actorRequestHandler) DeleteActor(c *gin.Context) {
 func (ar *actorRequestHandler) UpdateFlagActor(c *gin.Context) {
 	err := ar.Auth.Authentication(c)
 	if err != nil {
-		c.JSON(http.StatusUnauthorized, response.HandleFailedResponse(err.Error(), 401))
+		c.JSON(http.StatusUnauthorized, payload.HandleFailedResponse(err.Error(), 401))
 		return
 	}
 	adminData := c.MustGet("adminData").(jwt.MapClaims)
 	if adminData["username"].(string) != config.Config.SuperAccount.SuperName {
-		c.JSON(http.StatusUnauthorized, response.HandleFailedResponse(constant.ErrNotAllowedAccess.Error(), 401))
+		c.JSON(http.StatusUnauthorized, payload.HandleFailedResponse(constant.ErrNotAllowedAccess.Error(), 401))
 		return
 	}
 	id, err := strconv.Atoi(c.Param("id"))
 	if err != nil {
-		c.JSON(http.StatusBadRequest, response.HandleFailedResponse(err.Error(), 400))
+		c.JSON(http.StatusBadRequest, payload.HandleFailedResponse(err.Error(), 400))
 		return
 	}
-	actorReq := new(ActorDTO)
-	err = c.ShouldBindJSON(&actorReq)
-	if err != nil {
-		c.JSON(http.StatusBadRequest, response.HandleFailedResponse(err.Error(), 400))
+	var actorReq payload.UpdateFlagActor
+	//actorReq := new(payload.UpdateFlagActor)
+	//err = c.ShouldBindJSON(&actorReq)
+	//if err != nil {
+	//	c.JSON(http.StatusBadRequest, payload.HandleFailedResponse(err.Error(), 400))
+	//	return
+	//}
+	if errs := ar.Validation.BindAndValidate(c, &actorReq); len(errs) > 0 {
+		c.JSON(http.StatusBadRequest, payload.HandleSuccessResponse(errs, "", 400))
 		return
 	}
-
-	res, err := ar.actorController.UpdateFlagActor(*actorReq, id)
+	res, err := ar.actorController.UpdateFlagActor(actorReq, id)
 	if err != nil {
 		c.JSON(res.Status, res)
 		return
@@ -195,13 +215,13 @@ func (ar *actorRequestHandler) UpdateFlagActor(c *gin.Context) {
 func (ar *actorRequestHandler) SearchApproval(c *gin.Context) {
 	err := ar.Auth.Authentication(c)
 	if err != nil {
-		c.JSON(http.StatusUnauthorized, response.HandleFailedResponse(err.Error(), 401))
+		c.JSON(http.StatusUnauthorized, payload.HandleFailedResponse(err.Error(), 401))
 		return
 	}
 
 	adminData := c.MustGet("adminData").(jwt.MapClaims)
 	if adminData["username"].(string) != config.Config.SuperAccount.SuperName {
-		c.JSON(http.StatusUnauthorized, response.HandleFailedResponse(constant.ErrNotAllowedAccess.Error(), 401))
+		c.JSON(http.StatusUnauthorized, payload.HandleFailedResponse(constant.ErrNotAllowedAccess.Error(), 401))
 		return
 	}
 
@@ -216,17 +236,17 @@ func (ar *actorRequestHandler) SearchApproval(c *gin.Context) {
 func (ar *actorRequestHandler) GetApprovalById(c *gin.Context) {
 	err := ar.Auth.Authentication(c)
 	if err != nil {
-		c.JSON(http.StatusUnauthorized, response.HandleFailedResponse(err.Error(), 401))
+		c.JSON(http.StatusUnauthorized, payload.HandleFailedResponse(err.Error(), 401))
 		return
 	}
 	adminData := c.MustGet("adminData").(jwt.MapClaims)
 	if adminData["username"].(string) != config.Config.SuperAccount.SuperName {
-		c.JSON(http.StatusUnauthorized, response.HandleFailedResponse(constant.ErrNotAllowedAccess.Error(), 401))
+		c.JSON(http.StatusUnauthorized, payload.HandleFailedResponse(constant.ErrNotAllowedAccess.Error(), 401))
 		return
 	}
 	id, err := strconv.Atoi(c.Param("id"))
 	if err != nil {
-		c.JSON(http.StatusBadRequest, response.HandleFailedResponse(err.Error(), 400))
+		c.JSON(http.StatusBadRequest, payload.HandleFailedResponse(err.Error(), 400))
 		return
 	}
 
@@ -240,22 +260,26 @@ func (ar *actorRequestHandler) GetApprovalById(c *gin.Context) {
 func (ar *actorRequestHandler) ChangeStatusApproval(c *gin.Context) {
 	err := ar.Auth.Authentication(c)
 	if err != nil {
-		c.JSON(http.StatusUnauthorized, response.HandleFailedResponse(err.Error(), 401))
+		c.JSON(http.StatusUnauthorized, payload.HandleFailedResponse(err.Error(), 401))
 		return
 	}
 	adminData := c.MustGet("adminData").(jwt.MapClaims)
 	if adminData["username"].(string) != config.Config.SuperAccount.SuperName {
-		c.JSON(http.StatusUnauthorized, response.HandleFailedResponse(constant.ErrNotAllowedAccess.Error(), 401))
+		c.JSON(http.StatusUnauthorized, payload.HandleFailedResponse(constant.ErrNotAllowedAccess.Error(), 401))
 		return
 	}
 	id, err := strconv.Atoi(c.Param("id"))
-	approvalStatus := new(request.ApprovalStatus)
-	err = c.ShouldBindJSON(&approvalStatus)
-	if err != nil {
-		c.JSON(http.StatusBadRequest, response.HandleFailedResponse(err.Error(), 400))
+	var approvalStatus payload.ApprovalStatus
+	//err = c.ShouldBindJSON(&approvalStatus)
+	//if err != nil {
+	//	c.JSON(http.StatusBadRequest, payload.HandleFailedResponse(err.Error(), 400))
+	//	return
+	//}
+	if errs := ar.Validation.BindAndValidate(c, &approvalStatus); len(errs) > 0 {
+		c.JSON(http.StatusBadRequest, payload.HandleSuccessResponse(errs, "", 400))
 		return
 	}
-	res, err := ar.actorController.ChangeStatusApproval(id, *approvalStatus)
+	res, err := ar.actorController.ChangeStatusApproval(id, approvalStatus)
 	if err != nil {
 		c.JSON(res.Status, res)
 		return

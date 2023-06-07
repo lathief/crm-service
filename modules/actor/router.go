@@ -11,7 +11,7 @@ type ActorRoute struct {
 	ActorHandler ActorRequestHandler
 }
 
-func NewRouter(db *gorm.DB, auth middleware.AuthorizationInterface) ActorRoute {
+func NewRouter(db *gorm.DB, auth middleware.AuthorizationInterface, validation middleware.ValidationInterface) ActorRoute {
 	return ActorRoute{
 		ActorHandler: &actorRequestHandler{
 			actorController: &actorController{
@@ -20,7 +20,8 @@ func NewRouter(db *gorm.DB, auth middleware.AuthorizationInterface) ActorRoute {
 					ApprovalRepo: repository.ApprovalNewRepo(db),
 				},
 			},
-			Auth: auth,
+			Auth:       auth,
+			Validation: validation,
 		},
 	}
 }
@@ -36,7 +37,7 @@ func (ar *ActorRoute) Handle(router *gin.Engine) {
 		adminRG.GET("/:id", ar.ActorHandler.GetActorById)
 		adminRG.PUT("/:id", ar.ActorHandler.UpdateActor)
 		adminRG.DELETE("/:id", ar.ActorHandler.DeleteActor)
-		adminRG.PUT("/:id/status", ar.ActorHandler.UpdateFlagActor)
+		adminRG.PUT("/:id/flag", ar.ActorHandler.UpdateFlagActor)
 	}
 	approvePath := "/approval"
 	approveRG := router.Group(approvePath)

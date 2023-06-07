@@ -31,10 +31,11 @@ func main() {
 	if err != nil {
 		log.Fatal(errconn)
 	}
+	validation := middleware.NewValidation()
 	jsonAuth := middleware.NewSecurity()
-	customerHandler := customer.NewRouter(db, jsonAuth)
+	customerHandler := customer.NewRouter(db, jsonAuth, validation)
 	customerHandler.Handle(router)
-	actorHandler := actor.NewRouter(db, jsonAuth)
+	actorHandler := actor.NewRouter(db, jsonAuth, validation)
 	actorHandler.Handle(router)
 	errRouter := router.Run(fmt.Sprintf(":%s", config.Config.Server.Port))
 	if errRouter != nil {

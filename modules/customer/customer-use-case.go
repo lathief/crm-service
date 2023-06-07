@@ -1,39 +1,58 @@
 package customer
 
 import (
+	"context"
 	"fmt"
 	"github.com/lathief/crm-service/constant"
 	"github.com/lathief/crm-service/entity"
+	"github.com/lathief/crm-service/payload"
 	"github.com/lathief/crm-service/repository"
 	"github.com/lathief/crm-service/utils/helper"
 	"strconv"
 )
 
 type useCaseCustomer struct {
+	ActorRepo    repository.ActorInterfaceRepository
 	CustomerRepo repository.CustomerInterfaceRepository
 }
 type UseCaseCustomer interface {
-	CreateCustomer(customer CustomerDTO) error
-	GetCustomerById(id int) (CustomerDTO, error)
-	SearchCustomer(filter map[string]string) (*helper.Pagination, error)
-	UpdateCustomer(customer CustomerDTO, id int) error
-	DeleteCustomer(id int) error
+	CreateCustomer(ctx context.Context, customer CustomerDTO) error
+	GetCustomerById(ctx context.Context, id int) (CustomerDTO, error)
+	SearchCustomer(ctx context.Context, filter map[string]string) (*helper.Pagination, error)
+	UpdateCustomer(ctx context.Context, customer payload.UpdateCustomer, id int) error
+	DeleteCustomer(ctx context.Context, id int) error
 }
 
-func (uc *useCaseCustomer) CreateCustomer(customer CustomerDTO) error {
+func (uc *useCaseCustomer) CreateCustomer(ctx context.Context, customer CustomerDTO) error {
+	var err error
+	user, err := uc.ActorRepo.GetActorById(ctx.Value("adminId").(uint))
+	if err != nil {
+		return constant.ErrAdminNotFound
+	}
+	if user.IsActive != constant.True {
+		return constant.ErrAdminNotActive
+	}
 	customerSave := entity.Customer{
 		Firstname: customer.Firstname,
 		Lastname:  customer.Lastname,
 		Email:     customer.Email,
 		Avatar:    customer.Avatar,
 	}
-	err := uc.CustomerRepo.CreateCustomer(customerSave)
+	err = uc.CustomerRepo.CreateCustomer(customerSave)
 	if err != nil {
 		return err
 	}
 	return nil
 }
-func (uc *useCaseCustomer) GetCustomerById(id int) (CustomerDTO, error) {
+func (uc *useCaseCustomer) GetCustomerById(ctx context.Context, id int) (CustomerDTO, error) {
+	var err error
+	user, err := uc.ActorRepo.GetActorById(ctx.Value("adminId").(uint))
+	if err != nil {
+		return CustomerDTO{}, constant.ErrAdminNotFound
+	}
+	if user.IsActive != constant.True {
+		return CustomerDTO{}, constant.ErrAdminNotActive
+	}
 	get, err := uc.CustomerRepo.GetCustomerById(uint(id))
 	if err != nil {
 		return CustomerDTO{}, constant.ErrCustomerNotFound
@@ -46,10 +65,18 @@ func (uc *useCaseCustomer) GetCustomerById(id int) (CustomerDTO, error) {
 	}
 	return getCust, nil
 }
-func (uc *useCaseCustomer) SearchCustomer(filter map[string]string) (*helper.Pagination, error) {
+func (uc *useCaseCustomer) SearchCustomer(ctx context.Context, filter map[string]string) (*helper.Pagination, error) {
+	var err error
+	user, err := uc.ActorRepo.GetActorById(ctx.Value("adminId").(uint))
+	if err != nil {
+		return nil, constant.ErrAdminNotFound
+	}
+	if user.IsActive != constant.True {
+		return nil, constant.ErrAdminNotActive
+	}
 	var customers *helper.Pagination
 	var totalRows int64
-	var err error
+
 	page, err := strconv.Atoi(filter["page"])
 	if err != nil {
 		return &helper.Pagination{}, err
@@ -121,8 +148,15 @@ func (uc *useCaseCustomer) SearchCustomer(filter map[string]string) (*helper.Pag
 	customers.Rows = customer
 	return customers, nil
 }
-func (uc *useCaseCustomer) UpdateCustomer(customer CustomerDTO, id int) error {
-	_, err := uc.CustomerRepo.GetCustomerById(uint(id))
+func (uc *useCaseCustomer) UpdateCustomer(ctx context.Context, customer payload.UpdateCustomer, id int) error {
+	user, err := uc.ActorRepo.GetActorById(ctx.Value("adminId").(uint))
+	if err != nil {
+		return constant.ErrAdminNotFound
+	}
+	if user.IsActive != constant.True {
+		return constant.ErrAdminNotActive
+	}
+	_, err = uc.CustomerRepo.GetCustomerById(uint(id))
 	if err != nil {
 		return constant.ErrCustomerNotFound
 	}
@@ -138,8 +172,15 @@ func (uc *useCaseCustomer) UpdateCustomer(customer CustomerDTO, id int) error {
 	}
 	return nil
 }
-func (uc *useCaseCustomer) DeleteCustomer(id int) error {
-	_, err := uc.CustomerRepo.GetCustomerById(uint(id))
+func (uc *useCaseCustomer) DeleteCustomer(ctx context.Context, id int) error {
+	user, err := uc.ActorRepo.GetActorById(ctx.Value("adminId").(uint))
+	if err != nil {
+		return constant.ErrAdminNotFound
+	}
+	if user.IsActive != constant.True {
+		return constant.ErrAdminNotActive
+	}
+	_, err = uc.CustomerRepo.GetCustomerById(uint(id))
 	if err != nil {
 		return constant.ErrCustomerNotFound
 	}
